@@ -18,15 +18,15 @@ import { usePatient } from '../context/PatientContext';
 
 export default function TicketPage() {
   const navigate = useNavigate();
-  const { queueTicket, patientData, triageResult, resetAll } = usePatient();
-  const [estimatedWait, setEstimatedWait] = useState(null);
+  const { queueTicket, patientData, resetAll } = usePatient();
+  const [estimatedWait, setEstimatedWait] = useState(
+    () => queueTicket?.estimatedWaitMinutes ?? 0
+  );
 
   useEffect(() => {
     if (!queueTicket) {
       navigate('/');
-      return;
     }
-    setEstimatedWait(queueTicket.estimatedWaitMinutes || 0);
   }, [queueTicket, navigate]);
 
   // Simulated wait time polling (decreases every 30 seconds)

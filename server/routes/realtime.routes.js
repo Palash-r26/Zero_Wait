@@ -12,6 +12,12 @@ router.post('/token', async (req, res) => {
     if (!apiKey) {
       return res.status(500).json({ error: 'OPENAI_API_KEY is missing from environment' });
     }
+    if (apiKey.startsWith('sk-admin-')) {
+      return res.status(400).json({
+        error:
+          'OPENAI_API_KEY is an Admin key (sk-admin-…). Use a project API key (sk-proj-…) from platform.openai.com/api-keys for Voice Agent.',
+      });
+    }
 
     const response = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
       method: "POST",

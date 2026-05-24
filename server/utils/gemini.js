@@ -4,21 +4,42 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 // Lazy-init: only create the client when actually called
 let genAI = null;
 let model = null;
+let activeModelName = null;
+
+/** Default model — gemini-1.5-flash was removed from the API (404). Override via GEMINI_MODEL. */
+const getModelName = () => process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
 /**
  * Get or create the Gemini generative model instance.
- * Uses gemini-1.5-flash for speed + cost efficiency at a hackathon.
  */
 const getModel = () => {
-  if (!model) {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey || apiKey === 'your_key_here') {
-      throw new Error('GEMINI_API_KEY is not configured. Set it in .env');
-    }
+  const modelName = getModelName();
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey || apiKey === 'your_key_here') {
+    throw new Error('GEMINI_API_KEY is not configured. Set it in server/.env');
+  }
+
+  if (!genAI || activeModelName !== modelName) {
     genAI = new GoogleGenerativeAI(apiKey);
-    model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    model = genAI.getGenerativeModel({ model: modelName });
+    activeModelName = modelName;
   }
   return model;
+};
+
+/** Human-readable hint for common Gemini API failures (for logs / health). */
+const describeGeminiError = (err) => {
+  const msg = err?.message || String(err);
+  if (msg.includes('404') || msg.includes('not found')) {
+    return `Model "${getModelName()}" not found — set GEMINI_MODEL in .env (e.g. gemini-2.5-flash)`;
+  }
+  if (msg.includes('429') || msg.includes('quota')) {
+    return 'Gemini API quota exceeded — check billing at https://ai.google.dev/';
+  }
+  if (msg.includes('API key') || msg.includes('403')) {
+    return 'Invalid or unauthorized GEMINI_API_KEY';
+  }
+  return msg;
 };
 
 /**
@@ -40,7 +61,7 @@ const callGeminiJSON = async (prompt, responseSchema) => {
     const text = result.response.text();
     return JSON.parse(text);
   } catch (err) {
-    throw new Error(`Gemini JSON call failed: ${err.message}`);
+    throw new Error(`Gemini JSON call failed: ${describeGeminiError(err)}`);
   }
 };
 
@@ -73,7 +94,7 @@ const callGeminiVision = async (base64Image, mimeType, prompt, responseSchema) =
     const text = result.response.text();
     return JSON.parse(text);
   } catch (err) {
-    throw new Error(`Gemini Vision call failed: ${err.message}`);
+    throw new Error(`Gemini Vision call failed: ${describeGeminiError(err)}`);
   }
 };
 
@@ -115,12 +136,14 @@ const callGeminiChat = async (messages, systemInstruction) => {
     const text = result.response.text();
     return JSON.parse(text);
   } catch (err) {
-    throw new Error(`Gemini Chat call failed: ${err.message}`);
+    throw new Error(`Gemini Chat call failed: ${describeGeminiError(err)}`);
   }
 };
 
 module.exports = {
   getModel,
+  getModelName,
+  describeGeminiError,
   callGeminiJSON,
   callGeminiVision,
   callGeminiChat,

@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Send, Stethoscope, AlertTriangle, Mic, MicOff, PhoneOff } from 'lucide-react';
+import { ArrowLeft, Send, Stethoscope, AlertTriangle, Mic, PhoneOff } from 'lucide-react';
 import ChatBubble, { TypingIndicator } from '../components/ChatBubble';
 import PriorityBadge from '../components/PriorityBadge';
 import KioskButton from '../components/KioskButton';
@@ -15,7 +15,7 @@ import { allocateQueue } from '../api/client';
 export default function SymptomChatPage() {
   const navigate = useNavigate();
   const { patientData, setTriageResult, setQueueTicket } = usePatient();
-  const { messages, sendMessage, loading, triageResult, resetChat } = useSymptomChat();
+  const { messages, sendMessage, loading, triageResult } = useSymptomChat();
 
   const [inputValue, setInputValue] = useState('');
   const [allocating, setAllocating] = useState(false);
@@ -91,7 +91,7 @@ export default function SymptomChatPage() {
         });
         navigate('/ticket');
       }
-    } catch (err) {
+    } catch {
       // Even on total failure, navigate with a virtual ticket
       setQueueTicket({
         tokenNumber: `GENMED-${String(Date.now()).slice(-3)}`,

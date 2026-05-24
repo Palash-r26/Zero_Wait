@@ -231,6 +231,9 @@ ${medicalContext}`;
   } catch (err) {
     // FAIL-SAFE 2: Return hardcoded fallback
     console.error('Symptom analysis error:', err.message);
+    if (err.message?.includes('404') || err.message?.includes('not found')) {
+      console.error('   → Tip: set GEMINI_MODEL=gemini-2.5-flash in server/.env and restart');
+    }
     return res.json({
       department: 'General Medicine',
       priorityTier: 'GREEN',

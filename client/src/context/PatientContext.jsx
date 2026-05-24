@@ -40,6 +40,7 @@ export function PatientProvider({ children }) {
  * Hook to access patient context.
  * Must be used within a PatientProvider.
  */
+// eslint-disable-next-line react-refresh/only-export-components -- hook colocated with provider
 export function usePatient() {
   const ctx = useContext(PatientContext);
   if (!ctx) {

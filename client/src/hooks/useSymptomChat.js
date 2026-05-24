@@ -35,6 +35,17 @@ export function useSymptomChat() {
         // Send full conversation history to the API
         const result = await analyzeSymptoms(updatedMessages);
 
+        // Server may return a safe fallback when Gemini is down (still HTTP 200)
+        if (result.isFallback && result.triageComplete) {
+          const aiMsg = {
+            role: 'model',
+            content: `I've completed a basic assessment (AI service limited):\n\n**Department:** ${result.department}\n**Priority:** ${result.priorityTier}\n**Reasoning:** ${result.reasoning}`,
+          };
+          setMessages((prev) => [...prev, aiMsg]);
+          setTriageResult(result);
+          return;
+        }
+
         if (result.triageComplete) {
           // Triage is done — show the final assessment
           const aiMsg = {
@@ -52,13 +63,40 @@ export function useSymptomChat() {
           setTriageResult(result);
         }
       } catch (err) {
-        // On network/API failure — show error message + fallback
-        const errorMsg = {
-          role: 'model',
-          content:
-            "I'm having trouble connecting to the AI service. You'll be routed to General Medicine for a standard check-up.",
-        };
-        setMessages((prev) => [...prev, errorMsg]);
+        // Use server body if present (e.g. validation error with partial data)
+        const serverData = err.response?.data;
+        if (serverData?.triageComplete || serverData?.department) {
+          setTriageResult({ ...serverData, triageComplete: true, isFallback: true });
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: 'model',
+              content: `Assessment (limited): **${serverData.department}** — ${serverData.priorityTier}`,
+            },
+          ]);
+          return;
+        }
+
+        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const isNetwork =
+          err.code === 'ERR_NETWORK' ||
+          err.message === 'Network Error' ||
+          !err.response;
+
+        const chatLine = isNetwork
+          ? `I can't reach the hospital server at ${apiBase}. Make sure the API is running (\`npm run dev\` in the server folder), then try again.`
+          : err.response?.status === 422
+            ? "Your message couldn't be processed. Please try again."
+            : `The AI service returned an error (${err.response?.status || 'unknown'}). You'll be routed to General Medicine for a standard check-up.`;
+
+        if (import.meta.env.DEV) {
+          console.error('[useSymptomChat]', err.response?.data || err.message);
+        }
+
+        setMessages((prev) => [
+          ...prev,
+          { role: 'model', content: chatLine },
+        ]);
         setTriageResult({
           department: 'General Medicine',
           priorityTier: 'GREEN',

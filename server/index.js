@@ -75,6 +75,10 @@ app.use('/uploads', express.static(path.join(__dirname, uploadDir)));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
+  const geminiKey = process.env.GEMINI_API_KEY;
+  const geminiConfigured =
+    Boolean(geminiKey) && geminiKey !== 'your_key_here' && geminiKey !== 'your_key';
+
   res.json({
     status: 'healthy',
     service: 'Zero-Wait OPD Kiosk API',
@@ -82,6 +86,13 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     version: '1.1.0',
     socketClients: io.engine.clientsCount,
+    ai: {
+      gemini: {
+        configured: geminiConfigured,
+        model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+      },
+      openaiRealtime: Boolean(process.env.OPENAI_API_KEY),
+    },
   });
 });
 
@@ -135,7 +146,8 @@ const startServer = async () => {
     console.log(`  🌐 Server:    http://localhost:${PORT}`);
     console.log(`  💊 Health:    http://localhost:${PORT}/api/health`);
     console.log(`  🗄️  Database:  ${dbConnected ? 'MongoDB Connected ✅' : 'Not connected ⚠️ (using fallbacks)'}`);
-    console.log(`  🤖 Gemini AI: ${process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_key_here' ? 'Configured ✅' : 'Not configured ⚠️ (using fallbacks)'}`);
+    const geminiModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    console.log(`  🤖 Gemini AI: ${process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_key_here' ? `Configured ✅ (${geminiModel})` : 'Not configured ⚠️ (using fallbacks)'}`);
     console.log(`  🎙️  OpenAI Realtime: ${process.env.OPENAI_API_KEY ? 'Configured ✅' : 'Not configured ⚠️'}`);
     console.log(`  🔌 Socket.io: Real-time alerts enabled ✅`);
     console.log('════════════════════════════════════════════');

@@ -1,6 +1,9 @@
 import { useState, useRef, useCallback } from 'react';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export function useRealtimeVoice(onTriageComplete) {
+  void onTriageComplete; // reserved for voice-driven triage completion
   const [voiceState, setVoiceState] = useState('idle'); // idle, connecting, listening, speaking, error
   const [errorMsg, setErrorMsg] = useState('');
   
@@ -9,14 +12,34 @@ export function useRealtimeVoice(onTriageComplete) {
   const audioElRef = useRef(null);
   const streamRef = useRef(null);
 
+  const stopSession = useCallback(() => {
+    if (pcRef.current) {
+      pcRef.current.close();
+      pcRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    setVoiceState('idle');
+  }, []);
+
   const startSession = useCallback(async () => {
     try {
       setVoiceState('connecting');
       setErrorMsg('');
 
       // 1. Get ephemeral token from backend
-      const tokenResponse = await fetch('http://localhost:5000/api/realtime/token', { method: 'POST' });
-      if (!tokenResponse.ok) throw new Error('Failed to fetch ephemeral token');
+      const tokenResponse = await fetch(`${API_BASE}/api/realtime/token`, { method: 'POST' });
+      if (!tokenResponse.ok) {
+        const errBody = await tokenResponse.json().catch(() => ({}));
+        if (tokenResponse.status === 500 && errBody.error?.includes('OPENAI_API_KEY')) {
+          throw new Error(
+            'Voice agent needs OPENAI_API_KEY on the server. Use text chat, or add the key to server/.env'
+          );
+        }
+        throw new Error(errBody.error || 'Failed to fetch voice session token');
+      }
       const data = await tokenResponse.json();
       const EPHEMERAL_KEY = data.client_secret.value;
 
@@ -111,19 +134,7 @@ export function useRealtimeVoice(onTriageComplete) {
       setErrorMsg(err.message);
       stopSession();
     }
-  }, []);
-
-  const stopSession = useCallback(() => {
-    if (pcRef.current) {
-      pcRef.current.close();
-      pcRef.current = null;
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
-    }
-    setVoiceState('idle');
-  }, []);
+  }, [stopSession]);
 
   return {
     voiceState,
