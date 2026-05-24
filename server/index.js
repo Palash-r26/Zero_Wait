@@ -85,7 +85,7 @@ if (!MONGODB_URI) {
 function startExpressServer() {
   app.listen(PORT, () => {
     console.log(`========================================`);
-    console.log(`  APL Express Server running on port ${PORT}`);
+    console.log(`  Zero Wait Express Server running on port ${PORT}`);
     console.log(`  Health Check: http://localhost:${PORT}/api/health`);
     console.log(`  Database Status: ${isUsingMemoryDb ? 'InMemory (Fallback)' : 'MongoDB Atlas'}`);
     console.log(`========================================`);
@@ -121,8 +121,8 @@ app.get('/api/health', (req, res) => {
     database: isUsingMemoryDb ? 'in-memory-fallback' : 'mongodb-atlas',
     warning: memoryDbWarning || null,
     message: isUsingMemoryDb 
-      ? 'APL Server is running with IN-MEMORY fallback database.' 
-      : 'APL Server is fully connected to MongoDB Atlas!'
+      ? 'Zero Wait Server is running with IN-MEMORY fallback database.' 
+      : 'Zero Wait Server is fully connected to MongoDB Atlas!'
   });
 });
 

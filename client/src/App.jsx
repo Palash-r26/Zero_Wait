@@ -272,7 +272,7 @@ export default function App() {
           </div>
           <div>
             <h1 className="font-heading font-extrabold text-3xl leading-none tracking-tight">
-              APL <span className="bg-gradient-to-r from-brand-primary to-brand-secondary bg-clip-text text-transparent">Hub</span>
+              Zero Wait <span className="bg-gradient-to-r from-brand-primary to-brand-secondary bg-clip-text text-transparent">Hub</span>
             </h1>
             <p className="text-xs text-brand-muted mt-1">Production React-Tailwind Control Panel</p>
           </div>
@@ -510,7 +510,7 @@ export default function App() {
         transition={{ delay: 0.4 }}
         className="text-center text-xs text-brand-dim border-t border-white/10 pt-6 mt-6 flex flex-col md:flex-row justify-between items-center gap-4 z-10"
       >
-        <p>&copy; 2026 APL Dashboard Ecosystem. Powered by React, Tailwind & Framer Motion.</p>
+        <p>&copy; 2026 Zero Wait Dashboard Ecosystem. Powered by React, Tailwind & Framer Motion.</p>
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5"><Layers className="w-3.5 h-3.5 text-purple-400" /> Client: Vercel Ready</span>
           <span className="flex items-center gap-1.5"><Database className="w-3.5 h-3.5 text-emerald-400" /> Server: Railway Ready</span>
