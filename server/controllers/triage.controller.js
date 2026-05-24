@@ -3,6 +3,9 @@ const fs = require('fs');
 const path = require('path');
 const Patient = require('../models/Patient');
 const { callGeminiVision, callGeminiChat } = require('../utils/gemini');
+const safetyChecker = require('../services/SafetyChecker');
+const medicalKnowledge = require('../services/MedicalKnowledge');
+const translationService = require('../services/TranslationService');
 
 /**
  * POST /api/triage/extract-id
@@ -31,9 +34,11 @@ const extractIdController = async (req, res) => {
     const mimeType = req.file.mimetype;
 
     // Gemini Vision prompt for ID extraction
-    const prompt = `You are an OCR specialist. Extract the following fields from this government-issued ID card image.
+    const prompt = `You are an OCR specialist. Extract the following fields from this government-issued ID card or insurance card image.
 If a field is not clearly readable, set it to an empty string.
 Fields to extract: name, dob (in YYYY-MM-DD format), gender (male/female/other/unknown), uniqueId (any government ID number like Aadhar, Passport, etc.), address.
+Also look for insurance details: insuranceProvider, insuranceNumber, and insuranceExpiryDate (in YYYY-MM-DD format).
+If an insuranceExpiryDate is found, check if it is before today's date and set isInsuranceExpired to true if it is expired, otherwise false. If no insurance is found, set isInsuranceExpired to false.
 Also provide a confidence score from 0 to 1 indicating how confident you are in the overall extraction.`;
 
     const responseSchema = {
@@ -44,9 +49,13 @@ Also provide a confidence score from 0 to 1 indicating how confident you are in 
         gender: { type: 'string' },
         uniqueId: { type: 'string' },
         address: { type: 'string' },
+        insuranceProvider: { type: 'string' },
+        insuranceNumber: { type: 'string' },
+        insuranceExpiryDate: { type: 'string' },
+        isInsuranceExpired: { type: 'boolean' },
         confidence: { type: 'number' },
       },
-      required: ['name', 'dob', 'gender', 'uniqueId', 'confidence'],
+      required: ['name', 'dob', 'gender', 'uniqueId', 'isInsuranceExpired', 'confidence'],
     };
 
     const extractedData = await callGeminiVision(base64Image, mimeType, prompt, responseSchema);
@@ -60,6 +69,12 @@ Also provide a confidence score from 0 to 1 indicating how confident you are in 
       dob: extractedData.dob ? new Date(extractedData.dob) : null,
       gender: extractedData.gender || 'unknown',
       uniqueId: extractedData.uniqueId || '',
+      insurance: {
+        provider: extractedData.insuranceProvider || '',
+        policyId: extractedData.insuranceNumber || '',
+        status: extractedData.isInsuranceExpired ? 'inactive' : 'active',
+        expiryDate: extractedData.insuranceExpiryDate ? new Date(extractedData.insuranceExpiryDate) : null,
+      },
       isPartial,
       rawOcrText: JSON.stringify(extractedData),
     };
@@ -101,7 +116,7 @@ Also provide a confidence score from 0 to 1 indicating how confident you are in 
     console.error('Gemini OCR error:', err.message);
 
     // Try to save a partial patient anyway
-    const partialData = { name: '', dob: '', gender: 'unknown', uniqueId: '', confidence: 0 };
+    const partialData = { name: '', dob: '', gender: 'unknown', uniqueId: '', isInsuranceExpired: false, confidence: 0 };
 
     try {
       const patient = new Patient({
@@ -141,6 +156,31 @@ const analyzeSymptomController = async (req, res) => {
   try {
     const { messages } = req.body;
 
+    // 1. Combine all user messages into a single string to assess risk
+    const userMessages = messages
+      .filter((m) => m.role === 'user')
+      .map((m) => m.content)
+      .join(' ');
+
+    // 2. HARDCODED SAFETY CHECKER (Bypasses AI if critical emergency detected)
+    const emergencyOverride = safetyChecker.assessRisk(userMessages);
+    
+    if (emergencyOverride.isEmergency && emergencyOverride.priorityTier === 'RED') {
+      console.log(`🚨 SAFETY OVERRIDE TRIGGERED: ${emergencyOverride.matchedKeyword}`);
+      return res.json({
+        department: emergencyOverride.department,
+        priorityTier: 'RED',
+        reasoning: emergencyOverride.reasoning,
+        followUpQuestion: null,
+        triageComplete: true,
+        isFallback: false,
+        safetyOverride: true
+      });
+    }
+
+    // 3. Inject Medical Knowledge Context into the prompt
+    const medicalContext = medicalKnowledge.getTriageContextString();
+
     // System instruction for the triage AI
     const systemInstruction = `You are a medical triage AI at a hospital OPD kiosk. Based on the patient's described symptoms, determine:
 1) The most appropriate hospital department (choose from: Cardiology, Orthopedics, General Medicine, ENT, Dermatology, Neurology, Pediatrics, Gynecology, Ophthalmology, Psychiatry)
@@ -150,21 +190,42 @@ const analyzeSymptomController = async (req, res) => {
 If you need more information to make an accurate assessment, set triageComplete to false and ask ONE specific follow-up question in followUpQuestion.
 If you have enough information, set triageComplete to true and set followUpQuestion to null.
 
-Be concise but thorough. Err on the side of caution — if symptoms sound serious, assign YELLOW or RED.`;
+Be concise but thorough. Err on the side of caution — if symptoms sound serious, assign YELLOW or RED.
+
+${medicalContext}`;
 
     const triageResult = await callGeminiChat(messages, systemInstruction);
 
-    // Normalize the response
-    const response = {
+    // 4. Normalize the AI response, but respect YELLOW overrides from safety checker
+    let finalTier = ['RED', 'YELLOW', 'GREEN'].includes(triageResult.priorityTier)
+      ? triageResult.priorityTier
+      : 'GREEN';
+      
+    let finalReasoning = triageResult.reasoning || 'Assessment completed.';
+
+    // Apply YELLOW safety override if AI missed it
+    if (emergencyOverride.isEmergency && emergencyOverride.priorityTier === 'YELLOW' && finalTier === 'GREEN') {
+      finalTier = 'YELLOW';
+      finalReasoning = emergencyOverride.reasoning + ' ' + finalReasoning;
+    }
+
+    let response = {
       department: triageResult.department || 'General Medicine',
-      priorityTier: ['RED', 'YELLOW', 'GREEN'].includes(triageResult.priorityTier)
-        ? triageResult.priorityTier
-        : 'GREEN',
-      reasoning: triageResult.reasoning || 'Assessment completed.',
+      priorityTier: finalTier,
+      reasoning: finalReasoning,
       followUpQuestion: triageResult.followUpQuestion || null,
       triageComplete: triageResult.triageComplete ?? true,
       isFallback: false,
+      safetyOverride: !!emergencyOverride.isEmergency
     };
+
+    // 5. Detect language and translate if necessary
+    const detectedLanguage = translationService.detectLanguage(userMessages);
+    if (detectedLanguage !== 'en') {
+      // In a real production app, we would translate the `reasoning` and `followUpQuestion` here
+      // For now, we attach the translation service metadata
+      response = translationService.translateResponse(response, detectedLanguage);
+    }
 
     return res.json(response);
   } catch (err) {

@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CreditCard, PenLine, Activity, Globe, Shield } from 'lucide-react';
+import { CreditCard, PenLine, Activity, Globe, Shield, ShieldAlert } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import KioskButton from '../components/KioskButton';
 import { usePatient } from '../context/PatientContext';
 
@@ -145,6 +146,14 @@ export default function WelcomePage() {
         <div className="flex items-center gap-3">
           <div className="w-2.5 h-2.5 rounded-full bg-kiosk-green animate-pulse" />
           <span className="text-sm text-text-secondary font-medium">System Online</span>
+          <span className="text-text-muted">•</span>
+          <Link
+            to="/staff"
+            className="flex items-center gap-1.5 text-sm text-text-muted hover:text-kiosk-red transition-colors"
+          >
+            <ShieldAlert className="w-3.5 h-3.5" />
+            Staff View
+          </Link>
         </div>
 
         <div className="text-sm text-text-secondary font-mono">

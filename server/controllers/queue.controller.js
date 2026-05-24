@@ -1,4 +1,5 @@
 // ── FILE: controllers/queue.controller.js ── Queue allocation + ticket generation
+// Updated: stores saved ticket on res.locals for insurance agent middleware
 const Patient = require('../models/Patient');
 const QueueTicket = require('../models/QueueTicket');
 const { findShortestQueue, generateTokenNumber } = require('../utils/queueAlgorithm');
@@ -9,9 +10,11 @@ const AVG_CONSULT_MINUTES = 12;
 /**
  * POST /api/queue/allocate
  * Accepts { patientId, department, priorityTier }
- * → finds shortest queue → generates token → saves ticket → returns result.
+ * → finds shortest queue → generates token → saves ticket
+ * → stores on res.locals.savedTicket for downstream agent middleware
+ * → returns result.
  */
-const allocateQueueController = async (req, res) => {
+const allocateQueueController = async (req, res, next) => {
   try {
     const { patientId, department, priorityTier } = req.body;
 
@@ -69,35 +72,49 @@ const allocateQueueController = async (req, res) => {
 
       await ticket.save();
 
-      return res.status(201).json({
+      // Store saved ticket on res.locals for the insurance alert agent
+      res.locals.savedTicket = ticket.toObject();
+
+      // Send response but DON'T return — let next() chain continue for agent
+      res.status(201).json({
         success: true,
         ticket: ticket.toObject(),
         estimatedWaitMinutes,
         doctorName,
         queuePosition: currentQueueLength + 1,
       });
+
+      // Call next() to trigger insurance agent middleware
+      return next();
     } catch (dbErr) {
       // FAIL-SAFE 4: Database save failure
       console.error('Ticket save error:', dbErr.message);
 
       // Still return a "virtual" ticket so the kiosk flow doesn't break
-      return res.status(200).json({
+      const virtualTicket = {
+        tokenNumber,
+        department,
+        status: 'WAITING',
+        priorityTier,
+        patientId,
+        assignedDoctor: doctorName,
+        checkInAt: new Date(),
+        estimatedWaitMinutes,
+        _isVirtual: true,
+      };
+
+      res.locals.savedTicket = virtualTicket;
+
+      res.status(200).json({
         success: true,
-        ticket: {
-          tokenNumber,
-          department,
-          status: 'WAITING',
-          priorityTier,
-          assignedDoctor: doctorName,
-          checkInAt: new Date(),
-          estimatedWaitMinutes,
-          _isVirtual: true, // Flag that this wasn't persisted
-        },
+        ticket: virtualTicket,
         estimatedWaitMinutes,
         doctorName,
         queuePosition: currentQueueLength + 1,
         warning: 'Ticket generated but could not be saved to database.',
       });
+
+      return next();
     }
   } catch (err) {
     console.error('Queue allocation error:', err.message);

@@ -18,6 +18,7 @@ const patientSchema = new mongoose.Schema(
     insurance: {
       provider: { type: String, trim: true },
       policyId: { type: String, trim: true },
+      expiryDate: { type: Date },
       status: {
         type: String,
         enum: ['active', 'inactive', 'unknown'],

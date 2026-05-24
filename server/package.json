@@ -8,7 +8,13 @@
     "dev": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["healthcare", "kiosk", "opd", "triage", "gemini"],
+  "keywords": [
+    "healthcare",
+    "kiosk",
+    "opd",
+    "triage",
+    "gemini"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -18,7 +24,8 @@
     "express": "^5.2.1",
     "express-validator": "^7.2.0",
     "mongoose": "^9.6.2",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5-lts.1",
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

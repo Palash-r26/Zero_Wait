@@ -5,6 +5,7 @@ import WelcomePage from './pages/WelcomePage';
 import IDScanPage from './pages/IDScanPage';
 import SymptomChatPage from './pages/SymptomChatPage';
 import TicketPage from './pages/TicketPage';
+import StaffDashboard from './pages/StaffDashboard';
 
 /**
  * Root application component.
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/scan" element={<IDScanPage />} />
           <Route path="/symptoms" element={<SymptomChatPage />} />
           <Route path="/ticket" element={<TicketPage />} />
+          <Route path="/staff" element={<StaffDashboard />} />
         </Routes>
       </div>
     </PatientProvider>
