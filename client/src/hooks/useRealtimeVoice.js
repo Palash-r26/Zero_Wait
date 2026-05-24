@@ -41,6 +41,9 @@ export function useRealtimeVoice(onTriageComplete) {
         throw new Error(errBody.error || 'Failed to fetch voice session token');
       }
       const data = await tokenResponse.json();
+      if (!data?.client_secret?.value) {
+        throw new Error('Invalid token response from server');
+      }
       const EPHEMERAL_KEY = data.client_secret.value;
 
       // 2. Create Peer Connection

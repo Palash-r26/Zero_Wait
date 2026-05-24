@@ -13,6 +13,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import KioskButton from '../components/KioskButton';
 import PriorityBadge from '../components/PriorityBadge';
 import KioskHeader from '../components/KioskHeader';
 import KioskFooter from '../components/KioskFooter';
