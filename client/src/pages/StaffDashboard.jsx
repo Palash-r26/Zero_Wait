@@ -10,7 +10,7 @@ import {
 import { useStaffAlerts } from '../hooks/useStaffAlerts';
 import { useAuth } from '../context/AuthContext';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zero-wait.onrender.com/api' : 'http://localhost:5000/api');
 
 export default function StaffDashboard() {
   const navigate = useNavigate();

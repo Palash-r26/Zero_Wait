@@ -24,7 +24,7 @@ const PORT = process.env.PORT || 5000;
 // ═══════════════════════════════════════
 const io = new Server(httpServer, {
   cors: {
-    origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'],
+    origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174', 'https://zero-wait.vercel.app'],
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -76,7 +76,7 @@ io.on('connection', (socket) => {
 // CORS: Allow React dev servers
 app.use(
   cors({
-    origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'],
+    origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174', 'https://zero-wait.vercel.app'],
     credentials: true,
   })
 );

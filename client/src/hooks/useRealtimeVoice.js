@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zero-wait.onrender.com' : 'http://localhost:5000');
 
 export function useRealtimeVoice(onTriageComplete) {
   void onTriageComplete; // reserved for voice-driven triage completion

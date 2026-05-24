@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, Users, Activity } from 'lucide-react';
 import io from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.PROD ? 'https://zero-wait.onrender.com' : 'http://localhost:5000');
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zero-wait.onrender.com/api' : 'http://localhost:5000/api');
 
 export default function QueueBoardPage() {
   const [tickets, setTickets] = useState([]);

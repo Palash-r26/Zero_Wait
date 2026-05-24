@@ -79,7 +79,7 @@ export function useSymptomChat(locale = 'en') {
           return;
         }
 
-        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zero-wait.onrender.com' : 'http://localhost:5000');
         const isNetwork =
           err.code === 'ERR_NETWORK' ||
           err.message === 'Network Error' ||

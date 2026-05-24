@@ -8,41 +8,57 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     // Try to rehydrate session on load
-    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/me`, {
-      credentials: 'include'
+    const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zero-wait.onrender.com/api' : 'http://localhost:5000/api');
+    
+    fetch(`${API_URL}/auth/me`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
     })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setUser(data.user);
-        }
+      .then((res) => {
+        if (!res.ok) throw new Error('Not authenticated');
+        return res.json();
       })
-      .catch(err => console.error('Auth restore failed', err))
-      .finally(() => setLoading(false));
+      .then((data) => {
+        setUser(data.user);
+      })
+      .catch(() => {
+        setUser(null);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   const login = async (username, password) => {
-    const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/login`, {
+    const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zero-wait.onrender.com/api' : 'http://localhost:5000/api');
+    const res = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ username, password }),
-      credentials: 'include'
     });
+
     const data = await res.json();
-    if (data.success) {
-      setUser(data.user);
-      return { success: true };
-    } else {
-      return { success: false, error: data.error };
-    }
+    if (!res.ok) throw new Error(data.error || 'Login failed');
+
+    setUser(data.user);
+    return data;
   };
 
   const logout = async () => {
-    await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/logout`, {
-      method: 'POST',
-      credentials: 'include'
-    });
-    setUser(null);
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zero-wait.onrender.com/api' : 'http://localhost:5000/api');
+      await fetch(`${API_URL}/auth/logout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+    } catch (err) {
+      console.error('Logout error', err);
+    } finally {
+      setUser(null);
+    }
   };
 
   return (
