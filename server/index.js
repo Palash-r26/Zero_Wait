@@ -5,10 +5,12 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const { createServer } = require('http');
+const cookieParser = require('cookie-parser');
 const { Server } = require('socket.io');
 require('dotenv').config();
 
 const connectDB = require('./config/db');
+const seedDoctors = require('./utils/seedDoctors');
 const triageRoutes = require('./routes/triage.routes');
 const queueRoutes = require('./routes/queue.routes');
 const realtimeRoutes = require('./routes/realtime.routes');
@@ -31,18 +33,39 @@ const io = new Server(httpServer, {
 // Attach io instance to app so middleware can access it via req.app.get('io')
 app.set('io', io);
 
+const cookie = require('cookie');
+const jwt = require('jsonwebtoken');
+
 // Socket connection handling
+io.use((socket, next) => {
+  if (!socket.request.headers.cookie) {
+    return next(new Error('Authentication error: No cookies'));
+  }
+  const cookies = cookie.parse(socket.request.headers.cookie);
+  const token = cookies.token;
+  if (!token) {
+    return next(new Error('Authentication error: No token'));
+  }
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.user = decoded;
+    next();
+  } catch (err) {
+    next(new Error('Authentication error: Invalid token'));
+  }
+});
+
 io.on('connection', (socket) => {
-  console.log(`🔌 Socket connected: ${socket.id}`);
+  console.log(`🔌 Socket connected: ${socket.id} (User: ${socket.user.username})`);
 
   // Allow clients to join named rooms (e.g., 'staff-dashboard')
   socket.on('join', (room) => {
     socket.join(room);
-    console.log(`   └─ ${socket.id} joined room: ${room}`);
+    console.log(`   └─ ${socket.user.username} joined room: ${room}`);
   });
 
   socket.on('disconnect', () => {
-    console.log(`🔌 Socket disconnected: ${socket.id}`);
+    console.log(`🔌 Socket disconnected: ${socket.id} (User: ${socket.user.username})`);
   });
 });
 
@@ -61,6 +84,7 @@ app.use(
 // Parse JSON request bodies (up to 10MB for base64 images)
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
 
 // Serve uploaded ID images as static files
 const uploadDir = process.env.UPLOAD_DIR || './uploads';
@@ -96,12 +120,24 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Auth routes
+const authRoutes = require('./routes/auth.routes');
+app.use('/api/auth', authRoutes);
+
 // Triage routes: ID extraction + symptom analysis
 app.use('/api/triage', triageRoutes);
 
 // Queue routes: ticket allocation + insurance alert agent
 app.use('/api/queue', queueRoutes);
 app.use('/api/realtime', realtimeRoutes);
+
+// Doctor Admin routes
+const doctorRoutes = require('./routes/doctor.routes');
+app.use('/api/doctors', doctorRoutes);
+
+// Analytics routes
+const analyticsRoutes = require('./routes/analytics.routes');
+app.use('/api/analytics', analyticsRoutes);
 
 // ═══════════════════════════════════════
 // GLOBAL ERROR HANDLER
@@ -136,6 +172,14 @@ app.use((err, req, res, _next) => {
 const startServer = async () => {
   // Attempt MongoDB connection (non-blocking — server starts regardless)
   const dbConnected = await connectDB();
+  
+  if (dbConnected) {
+    const seedDoctors = require('./utils/seedDoctors');
+    await seedDoctors();
+    
+    const seedUsers = require('./utils/seedUsers');
+    await seedUsers();
+  }
 
   // Listen on httpServer (not app) so Socket.io shares the same port
   httpServer.listen(PORT, () => {

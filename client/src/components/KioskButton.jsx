@@ -24,24 +24,24 @@ export default function KioskButton({
   // Variant styles
   const variants = {
     primary:
-      'bg-gradient-to-r from-kiosk-blue to-blue-600 text-white hover:from-kiosk-blue-dark hover:to-blue-700 kiosk-glow-blue',
+      'bg-gradient-to-br from-kiosk-cyan to-kiosk-blue text-white shadow-[0_20px_60px_rgba(6,182,212,0.12)]',
     secondary:
-      'bg-white text-kiosk-blue border-2 border-kiosk-blue/20 hover:bg-kiosk-blue-light hover:border-kiosk-blue/40',
+      'bg-white text-kiosk-blue-dark border border-slate-200 hover:bg-slate-50',
     danger:
-      'bg-gradient-to-r from-kiosk-red to-red-600 text-white hover:from-red-700 hover:to-red-800 kiosk-glow-red',
+      'bg-gradient-to-br from-kiosk-red to-red-600 text-white shadow-[0_20px_60px_rgba(239,68,68,0.12)]',
     success:
-      'bg-gradient-to-r from-kiosk-green to-green-600 text-white hover:from-green-700 hover:to-green-700 kiosk-glow-green',
+      'bg-gradient-to-br from-kiosk-green to-green-600 text-white shadow-[0_20px_60px_rgba(34,197,94,0.12)]',
   };
 
   return (
     <motion.button
-      whileHover={!disabled && !loading ? { scale: 1.015 } : {}}
-      whileTap={!disabled && !loading ? { scale: 0.985 } : {}}
+      whileHover={!disabled && !loading ? { scale: 1.03 } : {}}
+      whileTap={!disabled && !loading ? { scale: 0.98 } : {}}
       onClick={onClick}
       disabled={disabled || loading}
       className={`
-        relative w-full min-h-[80px] px-8 py-5
-        rounded-2xl font-heading font-bold text-xl
+        relative w-full min-h-[72px] px-8 py-[18px]
+        rounded-[24px] font-heading font-bold text-xl
         flex items-center justify-center gap-3
         transition-all duration-200
         disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none

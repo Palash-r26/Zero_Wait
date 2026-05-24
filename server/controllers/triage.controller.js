@@ -154,7 +154,7 @@ Also provide a confidence score from 0 to 1 indicating how confident you are in 
  */
 const analyzeSymptomController = async (req, res) => {
   try {
-    const { messages } = req.body;
+    const { messages, locale = 'en' } = req.body;
 
     // 1. Combine all user messages into a single string to assess risk
     const userMessages = messages
@@ -192,6 +192,9 @@ If you have enough information, set triageComplete to true and set followUpQuest
 
 Be concise but thorough. Err on the side of caution — if symptoms sound serious, assign YELLOW or RED.
 
+CRITICAL: You MUST provide the \`reasoning\` and \`followUpQuestion\` in the language specified by the locale code: "${locale}". 
+For example, if locale is 'ta', translate the reasoning and followUpQuestion to Tamil. If locale is 'hi', translate to Hindi.
+
 ${medicalContext}`;
 
     const triageResult = await callGeminiChat(messages, systemInstruction);
@@ -219,12 +222,9 @@ ${medicalContext}`;
       safetyOverride: !!emergencyOverride.isEmergency
     };
 
-    // 5. Detect language and translate if necessary
-    const detectedLanguage = translationService.detectLanguage(userMessages);
-    if (detectedLanguage !== 'en') {
-      // In a real production app, we would translate the `reasoning` and `followUpQuestion` here
-      // For now, we attach the translation service metadata
-      response = translationService.translateResponse(response, detectedLanguage);
+    // 5. Apply cultural adaptations if not English
+    if (locale !== 'en') {
+      response = translationService.translateResponse(response, locale);
     }
 
     return res.json(response);
@@ -256,7 +256,38 @@ function cleanupFile(filePath) {
   }
 }
 
+/**
+ * POST /api/triage/patient
+ * Save a manual or corrected patient entry directly
+ */
+const createPatientController = async (req, res) => {
+  try {
+    const patientData = req.body;
+    
+    // Create new patient
+    const patient = new Patient({
+      ...patientData,
+      isPartial: false,
+      rawOcrText: 'MANUAL_ENTRY'
+    });
+    
+    await patient.save();
+    
+    return res.json({
+      success: true,
+      patient: patient.toObject()
+    });
+  } catch (err) {
+    console.error('Patient create error:', err.message);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to save patient. Please try again.'
+    });
+  }
+};
+
 module.exports = {
   extractIdController,
   analyzeSymptomController,
+  createPatientController,
 };

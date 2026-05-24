@@ -12,19 +12,20 @@
   --font-body: "Inter", system-ui, sans-serif;
 
   /* Core medical palette */
-  --color-kiosk-blue: #1A73E8;
-  --color-kiosk-blue-dark: #1557B0;
-  --color-kiosk-blue-light: #E8F0FE;
-  --color-kiosk-red: #D32F2F;
-  --color-kiosk-red-light: #FDECEA;
-  --color-kiosk-green: #388E3C;
-  --color-kiosk-green-light: #E8F5E9;
-  --color-kiosk-amber: #F57C00;
-  --color-kiosk-amber-light: #FFF3E0;
+  --color-kiosk-blue: #2563EB;
+  --color-kiosk-cyan: #06B6D4;
+  --color-kiosk-blue-dark: #0F172A;
+  --color-kiosk-blue-light: #F0F9FF;
+  --color-kiosk-red: #EF4444;
+  --color-kiosk-red-light: #FEF2F2;
+  --color-kiosk-green: #22C55E;
+  --color-kiosk-green-light: #F0FDF4;
+  --color-kiosk-amber: #EAB308;
+  --color-kiosk-amber-light: #FEFCE8;
 
   /* Backgrounds */
-  --color-bg-primary: #F1F5F9;
-  --color-bg-card: #FFFFFF;
+  --color-bg-primary: #F8FAFC;
+  --color-bg-card: rgba(255, 255, 255, 0.7);
   --color-bg-overlay: rgba(255, 255, 255, 0.85);
 
   /* Text */
@@ -33,23 +34,38 @@
   --color-text-muted: #94A3B8;
 
   /* Borders */
-  --color-border-light: #E2E8F0;
+  --color-border-light: rgba(255, 255, 255, 0.6);
   --color-border-medium: #CBD5E1;
+}
+
+/* ── Dark Mode Overrides ── */
+.dark {
+  /* Backgrounds */
+  --color-bg-primary: #020617;
+  --color-bg-card: rgba(15, 23, 42, 0.7);
+  --color-bg-overlay: rgba(2, 6, 23, 0.85);
+
+  /* Text */
+  --color-text-primary: #F8FAFC;
+  --color-text-secondary: #CBD5E1;
+  --color-text-muted: #64748B;
+
+  /* Borders */
+  --color-border-light: rgba(255, 255, 255, 0.08);
+  --color-border-medium: #334155;
 }
 
 /* ── Utility Classes ── */
 @utility glass-card {
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 20px 60px rgba(6, 182, 212, 0.12);
 }
 
 @utility kiosk-shadow {
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.06),
-    0 10px 40px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
 }
 
 @utility kiosk-glow-blue {
@@ -81,7 +97,7 @@ html, body {
 }
 
 body {
-  background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 50%, #F1F5F9 100%);
+  background: linear-gradient(135deg, #F0F9FF 0%, #FFFFFF 50%, #CFFAFE 100%);
   color: #0F172A;
   font-family: "Inter", system-ui, sans-serif;
   min-height: 100vh;
@@ -167,4 +183,27 @@ textarea:focus-visible {
   font-weight: 900;
   letter-spacing: 0.05em;
   line-height: 1;
+}
+
+/* ── Print Styles ── */
+@media print {
+  @page {
+    margin: 0;
+    size: auto;
+  }
+  body {
+    background: white;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  /* Force dark text for printing */
+  * {
+    color: black !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+  }
 }

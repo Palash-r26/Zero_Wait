@@ -18,6 +18,7 @@ export function useStaffAlerts() {
     // Create socket connection
     const socket = io(SOCKET_URL, {
       transports: ['websocket', 'polling'],
+      withCredentials: true
     });
     socketRef.current = socket;
 

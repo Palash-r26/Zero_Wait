@@ -1,12 +1,12 @@
 // ── FILE: hooks/useSymptomChat.js ── Custom hook for symptom triage chat
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { analyzeSymptoms } from '../api/client';
 
 /**
  * Custom hook managing the multi-turn symptom chat with Gemini AI.
  * Handles message history, loading state, and triage result.
  */
-export function useSymptomChat() {
+export function useSymptomChat(locale = 'en') {
   const [messages, setMessages] = useState([
     {
       role: 'model',
@@ -16,6 +16,7 @@ export function useSymptomChat() {
   ]);
   const [loading, setLoading] = useState(false);
   const [triageResult, setTriageResult] = useState(null);
+  const isSending = useRef(false);
 
   /**
    * Send a user message and get AI response.
@@ -23,7 +24,8 @@ export function useSymptomChat() {
    */
   const sendMessage = useCallback(
     async (userText) => {
-      if (!userText.trim() || loading) return;
+      if (!userText.trim() || loading || isSending.current) return;
+      isSending.current = true;
 
       // Append user message
       const userMsg = { role: 'user', content: userText.trim() };
@@ -32,8 +34,8 @@ export function useSymptomChat() {
       setLoading(true);
 
       try {
-        // Send full conversation history to the API
-        const result = await analyzeSymptoms(updatedMessages);
+        // Send full conversation history to the API with locale
+        const result = await analyzeSymptoms(updatedMessages, locale);
 
         // Server may return a safe fallback when Gemini is down (still HTTP 200)
         if (result.isFallback && result.triageComplete) {
@@ -107,9 +109,10 @@ export function useSymptomChat() {
         });
       } finally {
         setLoading(false);
+        isSending.current = false;
       }
     },
-    [messages, loading]
+    [messages, loading, locale]
   );
 
   /** Reset the chat for a new session */

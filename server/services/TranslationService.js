@@ -8,7 +8,7 @@ class TranslationService {
     this.simpleExplanations = this._loadSimpleExplanations();
     this.culturalAdaptations = this._loadCulturalAdaptations();
     
-    this.supportedLanguages = ['en', 'hi', 'es'];
+    this.supportedLanguages = ['en', 'hi', 'ta'];
   }
 
   _loadMedicalTranslations() {
@@ -23,10 +23,10 @@ class TranslationService {
         'vomiting': 'उल्टी', 'chest_pain': 'छाती में दर्द',
         'shortness_of_breath': 'सांस लेने में तकलीफ'
       },
-      'es': {
-        'fever': 'fiebre', 'headache': 'dolor de cabeza', 'nausea': 'náusea',
-        'vomiting': 'vómito', 'chest_pain': 'dolor en el pecho',
-        'shortness_of_breath': 'falta de aire'
+      'ta': {
+        'fever': 'காய்ச்சல்', 'headache': 'தலைவலி', 'nausea': 'குமட்டல்',
+        'vomiting': 'வாந்தி', 'chest_pain': 'நெஞ்சுவலி',
+        'shortness_of_breath': 'மூச்சுத் திணறல்'
       }
     };
   }
@@ -35,7 +35,7 @@ class TranslationService {
     return {
       'en': { 'severe_pain': 'severe pain', 'mild_pain': 'mild pain' },
       'hi': { 'severe_pain': 'तेज दर्द', 'mild_pain': 'हल्का दर्द' },
-      'es': { 'severe_pain': 'dolor severo', 'mild_pain': 'dolor leve' }
+      'ta': { 'severe_pain': 'கடும் வலி', 'mild_pain': 'லேசான வலி' }
     };
   }
 
@@ -49,9 +49,9 @@ class TranslationService {
         'hypertension': 'उच्च रक्तचाप - जब खून नसों की दीवारों पर बहुत जोर डालता है',
         'diabetes': 'मधुमेह - जब शरीर भोजन से चीनी को सही तरीके से इस्तेमाल नहीं कर पाता'
       },
-      'es': {
-        'hypertension': 'presión arterial alta - cuando la sangre empuja demasiado fuerte contra las paredes de los vasos sanguíneos',
-        'diabetes': 'azúcar alta en sangre - cuando su cuerpo no puede procesar adecuadamente el azúcar de los alimentos'
+      'ta': {
+        'hypertension': 'உயர் இரத்த அழுத்தம் - இரத்த நாளங்களில் இரத்தம் கடினமாக அழுத்துவது',
+        'diabetes': 'சர்க்கரை நோய் - உணவில் உள்ள சர்க்கரையை உடல் சரியாக பயன்படுத்த முடியாத நிலை'
       }
     };
   }
@@ -63,10 +63,10 @@ class TranslationService {
         'local_emergency_numbers': { 'ambulance': '108', 'police': '100' },
         'common_home_remedies': { 'fever': 'गुनगुना पानी पिएं, आराम करें' }
       },
-      'es': {
-        'greeting': 'Hola',
-        'local_emergency_numbers': { 'ambulance': '911', 'police': '911' },
-        'common_home_remedies': { 'fever': 'beber mucha agua, descansar' }
+      'ta': {
+        'greeting': 'வணக்கம்',
+        'local_emergency_numbers': { 'ambulance': '108', 'police': '100' },
+        'common_home_remedies': { 'fever': 'நிறைய தண்ணீர் குடிக்கவும், ஓய்வெடுக்கவும்' }
       }
     };
   }
@@ -96,15 +96,9 @@ class TranslationService {
   _getTranslationNote(targetLanguage) {
     const notes = {
       'hi': "यह अनुवाद सहायता के लिए है। महत्वपूर्ण चिकित्सा निर्णयों के लिए डॉक्टर से सलाह लें।",
-      'es': "Esta traducción es para asistencia. Para decisiones médicas importantes, consulte a un médico."
+      'ta': "இந்த மொழிபெயர்ப்பு உதவிக்காக மட்டுமே. முக்கியமான மருத்துவ முடிவுகளுக்கு மருத்துவரை அணுகவும்."
     };
     return notes[targetLanguage] || "This translation is for assistance. For important medical decisions, consult a healthcare provider.";
-  }
-
-  detectLanguage(text) {
-    if (/[\u0900-\u097F]/.test(text)) return 'hi';
-    if (/[ñóéíáú¿¡]/i.test(text)) return 'es';
-    return 'en';
   }
 }
 

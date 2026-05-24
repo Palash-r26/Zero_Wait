@@ -1,0 +1,40 @@
+{
+  "welcome": {
+    "title": "Welcome to",
+    "subtitle": "Zero-Wait OPD System",
+    "tap_to_start": "Tap anywhere to start",
+    "emergency_call": "In case of emergency, please proceed directly to the Emergency Room",
+    "language": "Language",
+    "english": "English",
+    "hindi": "हिंदी",
+    "tamil": "தமிழ்"
+  },
+  "scan": {
+    "title": "Scan ID Card",
+    "subtitle": "Please place your ID card below the scanner or upload an image",
+    "button": "Capture / Upload ID",
+    "processing": "Extracting Details...",
+    "success": "ID Scanned Successfully!",
+    "skip": "Skip ID Scan"
+  },
+  "symptoms": {
+    "title": "Tell us your symptoms",
+    "subtitle": "How are you feeling today?",
+    "input_placeholder": "E.g., I have a headache and fever...",
+    "send": "Send",
+    "typing": "AI is assessing...",
+    "error": "Failed to get response. Please try again.",
+    "complete": "Triage complete. Generating token..."
+  },
+  "ticket": {
+    "title": "Your Queue Ticket",
+    "subtitle": "Please take a seat. Your number will be called shortly.",
+    "token": "Token Number",
+    "department": "Department",
+    "wait_time": "Est. Wait Time",
+    "priority": "Priority",
+    "track": "Track on your phone",
+    "scan_qr": "Scan to track status",
+    "done": "Done"
+  }
+}

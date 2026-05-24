@@ -2,20 +2,26 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Send, Stethoscope, AlertTriangle, Mic, PhoneOff } from 'lucide-react';
+import { Send, Stethoscope, AlertTriangle, Mic, PhoneOff } from 'lucide-react';
 import ChatBubble, { TypingIndicator } from '../components/ChatBubble';
 import PriorityBadge from '../components/PriorityBadge';
 import KioskButton from '../components/KioskButton';
 import VoiceVisualizer from '../components/VoiceVisualizer';
+import KioskHeader from '../components/KioskHeader';
+import KioskFooter from '../components/KioskFooter';
 import { usePatient } from '../context/PatientContext';
 import { useSymptomChat } from '../hooks/useSymptomChat';
 import { useRealtimeVoice } from '../hooks/useRealtimeVoice';
-import { allocateQueue } from '../api/client';
+import { allocateQueue, createPatient } from '../api/client';
+import { useTranslation } from 'react-i18next';
 
 export default function SymptomChatPage() {
   const navigate = useNavigate();
-  const { patientData, setTriageResult, setQueueTicket } = usePatient();
-  const { messages, sendMessage, loading, triageResult } = useSymptomChat();
+  const { patientData, setPatientData, setTriageResult, setQueueTicket } = usePatient();
+  const { t, i18n } = useTranslation();
+  
+  // Pass current language to hook
+  const { messages, sendMessage, loading, triageResult } = useSymptomChat(i18n.language);
 
   const [inputValue, setInputValue] = useState('');
   const [allocating, setAllocating] = useState(false);
@@ -62,8 +68,26 @@ export default function SymptomChatPage() {
     setTriageResult(triageResult);
 
     try {
+      let patientIdToUse = patientData?._id || patientData?.id;
+      
+      // If no patient exists (walk-in without ID), create one so queue save doesn't fail
+      if (!patientIdToUse) {
+        const result = await createPatient({ 
+          name: 'Walk-in Patient', 
+          uniqueId: 'WALKIN-' + Date.now(),
+          gender: 'unknown',
+          insurance: { status: 'unknown', provider: '', policyId: '' }
+        });
+        if (result.success) {
+          patientIdToUse = result.patient._id;
+          setPatientData(result.patient);
+        } else {
+          patientIdToUse = 'walk-in-' + Date.now();
+        }
+      }
+
       const payload = {
-        patientId: patientData?._id || patientData?.id || 'walk-in-' + Date.now(),
+        patientId: patientIdToUse,
         department: triageResult.department,
         priorityTier: triageResult.priorityTier,
       };
@@ -111,28 +135,12 @@ export default function SymptomChatPage() {
   return (
     <div className="min-h-screen flex flex-col bg-bg-primary">
       {/* Header */}
-      <header className="flex items-center gap-4 px-8 py-5 border-b border-border-light bg-white/60 backdrop-blur-sm flex-shrink-0">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-3 rounded-xl bg-white border border-border-light hover:bg-bg-primary transition-all"
-        >
-          <ArrowLeft className="w-5 h-5 text-text-secondary" />
-        </button>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-kiosk-green to-emerald-500 flex items-center justify-center">
-            <Stethoscope className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="font-heading font-bold text-xl text-text-primary">Symptom Assessment</h1>
-            <p className="text-xs text-text-muted">Powered by AI Triage</p>
-          </div>
-        </div>
-
-        {patientData?.name && (
-          <div className="ml-auto px-4 py-2 rounded-full bg-kiosk-blue-light text-kiosk-blue text-sm font-semibold">
-            {patientData.name}
-          </div>
-        )}
+      <KioskHeader 
+        step={2} 
+        title={t('symptoms.title')} 
+        subtitle={t('symptoms.subtitle')}
+        icon={<Stethoscope className="w-5 h-5 text-white" />}
+      >
         <button
           onClick={toggleVoiceMode}
           className={`ml-3 p-3 rounded-xl border transition-all flex items-center gap-2 ${
@@ -148,12 +156,12 @@ export default function SymptomChatPage() {
             </>
           ) : (
             <>
-              <Mic className="w-5 h-5" />
-              <span className="text-sm font-bold text-kiosk-blue">Voice Agent</span>
+              <Mic className="w-5 h-5 text-kiosk-cyan" />
+              <span className="text-sm font-bold text-kiosk-cyan">Voice Agent</span>
             </>
           )}
         </button>
-      </header>
+      </KioskHeader>
 
       {/* Chat Messages Area */}
       <main className="flex-1 overflow-y-auto px-8 py-6 relative">
@@ -187,7 +195,7 @@ export default function SymptomChatPage() {
                 initial={{ opacity: 0, y: 20, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.5 }}
-                className="bg-white rounded-2xl border border-border-light kiosk-shadow p-6 space-y-5"
+                className="bg-white rounded-[24px] border border-slate-200 kiosk-shadow p-6 space-y-5"
               >
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -244,29 +252,32 @@ export default function SymptomChatPage() {
 
       {/* Bottom Input Bar */}
       {!triageResult && !isVoiceMode && (
-        <div className="flex-shrink-0 border-t border-border-light bg-white/80 backdrop-blur-sm px-8 py-5">
+        <div className="flex-shrink-0 border-t border-border-light bg-white/70 backdrop-blur-md px-8 py-5">
           <div className="max-w-2xl mx-auto flex gap-3">
             <input
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Describe your symptoms..."
+              placeholder={t('symptoms.input_placeholder')}
               disabled={loading}
-              className="flex-1 bg-bg-primary border-2 border-border-light rounded-xl px-5 py-4 text-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-kiosk-blue focus:ring-2 focus:ring-kiosk-blue/20 transition-all disabled:opacity-50"
+              className="flex-1 bg-bg-primary border-2 border-border-light rounded-xl px-5 py-4 text-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-kiosk-cyan focus:ring-2 focus:ring-kiosk-cyan/20 transition-all disabled:opacity-50"
             />
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleSend}
               disabled={loading || !inputValue.trim()}
-              className="w-14 h-14 rounded-xl bg-gradient-to-r from-kiosk-blue to-blue-600 text-white flex items-center justify-center shadow-lg shadow-kiosk-blue/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all self-center"
+              className="w-14 h-14 rounded-xl bg-gradient-to-br from-kiosk-cyan to-kiosk-blue text-white flex items-center justify-center shadow-[0_4px_12px_rgba(6,182,212,0.3)] disabled:opacity-50 disabled:cursor-not-allowed transition-all self-center"
             >
               <Send className="w-5 h-5" />
             </motion.button>
           </div>
         </div>
       )}
+
+      {/* Footer */}
+      <KioskFooter />
     </div>
   );
 }

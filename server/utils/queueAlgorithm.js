@@ -34,26 +34,29 @@ const DEPT_CODES = {
 
 /**
  * Find the doctor with the shortest active queue in a department.
- * FAIL-SAFE 3: If no doctors found, defaults to "Dr. On-Call" with queue length 0.
+ * Now queries the MongoDB Doctor model for active doctors in the department.
  *
  * @param {string} department - Department name
  * @returns {{ doctorName: string, currentQueueLength: number }}
  */
 const findShortestQueue = async (department) => {
-  const doctors = DOCTOR_ROSTER[department];
-
-  // Fail-safe: if department not in roster, default to On-Call
-  if (!doctors || doctors.length === 0) {
-    return { doctorName: 'Dr. On-Call', currentQueueLength: 0 };
-  }
-
   try {
-    // Count WAITING tickets per doctor in this department
+    const Doctor = require('../models/Doctor');
+    // Fetch active doctors for this department
+    const doctorDocs = await Doctor.find({ department, isActive: true });
+    
+    // If no doctors in DB for this department, fall back to roster or On-Call
+    let doctorNames = doctorDocs.map(d => d.name);
+    if (doctorNames.length === 0) {
+      doctorNames = DOCTOR_ROSTER[department] || ['Dr. On-Call'];
+    }
+
+    // Count WAITING or CALLED tickets per doctor in this department
     const pipeline = await QueueTicket.aggregate([
       {
         $match: {
           department,
-          status: 'WAITING',
+          status: { $in: ['WAITING', 'CALLED'] },
         },
       },
       {
@@ -71,22 +74,23 @@ const findShortestQueue = async (department) => {
     }
 
     // Find the doctor with fewest active tickets (default to 0 if no tickets)
-    let bestDoctor = doctors[0];
-    let bestCount = queueMap[doctors[0]] || 0;
+    let bestDoctor = doctorNames[0];
+    let bestCount = queueMap[doctorNames[0]] || 0;
 
-    for (let i = 1; i < doctors.length; i++) {
-      const count = queueMap[doctors[i]] || 0;
+    for (let i = 1; i < doctorNames.length; i++) {
+      const count = queueMap[doctorNames[i]] || 0;
       if (count < bestCount) {
-        bestDoctor = doctors[i];
+        bestDoctor = doctorNames[i];
         bestCount = count;
       }
     }
 
     return { doctorName: bestDoctor, currentQueueLength: bestCount };
   } catch (err) {
-    // If aggregation fails (e.g., no MongoDB), fall back to first doctor
+    // If DB fails, fall back to hardcoded roster
     console.error('Queue aggregation error:', err.message);
-    return { doctorName: doctors[0], currentQueueLength: 0 };
+    const fallbackDoctors = DOCTOR_ROSTER[department] || ['Dr. On-Call'];
+    return { doctorName: fallbackDoctors[0], currentQueueLength: 0 };
   }
 };
 

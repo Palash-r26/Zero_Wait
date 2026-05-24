@@ -3,6 +3,7 @@
 const Patient = require('../models/Patient');
 const QueueTicket = require('../models/QueueTicket');
 const { findShortestQueue, generateTokenNumber } = require('../utils/queueAlgorithm');
+const { fireWebhook } = require('../services/webhookService');
 
 // Average consultation time per patient in minutes (configurable)
 const AVG_CONSULT_MINUTES = 12;
@@ -72,6 +73,9 @@ const allocateQueueController = async (req, res, next) => {
 
       await ticket.save();
 
+      // Fire integration webhook
+      fireWebhook('TICKET_CREATED', ticket.toObject());
+
       // Store saved ticket on res.locals for the insurance alert agent
       res.locals.savedTicket = ticket.toObject();
 
@@ -125,6 +129,80 @@ const allocateQueueController = async (req, res, next) => {
   }
 };
 
+/**
+ * GET /api/queue
+ * Fetch all active tickets for the queue board
+ */
+const getQueueController = async (req, res) => {
+  try {
+    const activeTickets = await QueueTicket.find({
+      status: { $in: ['WAITING', 'CALLED'] },
+    }).sort({ priorityTier: 1, checkInAt: 1 }).lean();
+
+    res.status(200).json({ success: true, tickets: activeTickets });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+/**
+ * PATCH /api/queue/:id/status
+ * Update ticket status (e.g. WAITING -> CALLED -> DONE)
+ */
+const updateStatusController = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const ticket = await QueueTicket.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+    if (!ticket) return res.status(404).json({ success: false, error: 'Ticket not found' });
+    
+    fireWebhook('STATUS_CHANGED', ticket.toObject());
+    
+    // Optionally emit via socket io here if we want instant UI updates
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('queueUpdate', ticket);
+    }
+
+    res.status(200).json({ success: true, ticket });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+/**
+ * PATCH /api/queue/:id/priority
+ * Nurse override to change priority tier
+ */
+const updatePriorityController = async (req, res) => {
+  try {
+    const { priorityTier } = req.body;
+    const ticket = await QueueTicket.findByIdAndUpdate(
+      req.params.id,
+      { priorityTier },
+      { new: true }
+    );
+    if (!ticket) return res.status(404).json({ success: false, error: 'Ticket not found' });
+    
+    fireWebhook('PRIORITY_ESCALATED', ticket.toObject());
+    
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('queueUpdate', ticket);
+    }
+
+    res.status(200).json({ success: true, ticket });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 module.exports = {
   allocateQueueController,
+  getQueueController,
+  updateStatusController,
+  updatePriorityController,
 };

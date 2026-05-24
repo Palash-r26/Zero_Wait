@@ -2,16 +2,20 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Upload, ArrowLeft, AlertTriangle, XCircle, CheckCircle } from 'lucide-react';
+import { Camera, Upload, AlertTriangle, XCircle, CheckCircle, Shield } from 'lucide-react';
 import KioskButton from '../components/KioskButton';
 import PatientForm from '../components/PatientForm';
+import KioskHeader from '../components/KioskHeader';
+import KioskFooter from '../components/KioskFooter';
 import { usePatient } from '../context/PatientContext';
 import { extractPatientId } from '../api/client';
+import { useTranslation } from 'react-i18next';
 
 export default function IDScanPage() {
   const navigate = useNavigate();
   const { setPatientData } = usePatient();
   const fileInputRef = useRef(null);
+  const { t } = useTranslation();
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -73,15 +77,20 @@ export default function IDScanPage() {
     }
   };
 
-  const handleFormSubmit = (formData) => {
-    // Merge form data with partial patient info
-    const patient = {
-      ...partialPatient,
-      ...formData,
-      isPartial: false,
-    };
-    setPatientData(patient);
-    navigate('/symptoms');
+  const handleFormSubmit = async (formData) => {
+    try {
+      setLoading(true);
+      const { createPatient } = await import('../api/client');
+      // Create new patient using form data
+      const result = await createPatient(formData);
+      if (result.success) {
+        setPatientData(result.patient);
+        navigate('/symptoms');
+      }
+    } catch (err) {
+      setError('Failed to save patient details. Please try again.');
+      setLoading(false);
+    }
   };
 
   const handleReset = () => {
@@ -95,18 +104,11 @@ export default function IDScanPage() {
   return (
     <div className="min-h-screen flex flex-col bg-bg-primary">
       {/* Header */}
-      <header className="flex items-center gap-4 px-8 py-5 border-b border-border-light bg-white/60 backdrop-blur-sm">
-        <button
-          onClick={() => navigate('/')}
-          className="p-3 rounded-xl bg-white border border-border-light hover:bg-bg-primary transition-all"
-        >
-          <ArrowLeft className="w-5 h-5 text-text-secondary" />
-        </button>
-        <div>
-          <h1 className="font-heading font-bold text-2xl text-text-primary">Scan Your ID Card</h1>
-          <p className="text-sm text-text-muted">Upload a photo of your government-issued ID</p>
-        </div>
-      </header>
+      <KioskHeader 
+        step={1} 
+        title={t('scan.title')} 
+        subtitle={t('scan.subtitle')} 
+      />
 
       {/* Main Content */}
       <main className="flex-1 px-8 py-8 max-w-2xl mx-auto w-full">
@@ -176,12 +178,12 @@ export default function IDScanPage() {
               <div
                 onClick={() => fileInputRef.current?.click()}
                 className={`
-                  relative cursor-pointer rounded-2xl border-3 border-dashed
+                  relative cursor-pointer rounded-2xl border-2 border-dashed
                   transition-all duration-300 overflow-hidden
                   ${
                     preview
-                      ? 'border-kiosk-blue bg-kiosk-blue-light/50'
-                      : 'border-border-medium bg-white hover:border-kiosk-blue hover:bg-kiosk-blue-light/30'
+                      ? 'border-kiosk-cyan bg-kiosk-cyan/5'
+                      : 'border-border-medium bg-white/70 backdrop-blur-md hover:border-kiosk-cyan hover:bg-kiosk-cyan/10'
                   }
                 `}
               >
@@ -202,7 +204,7 @@ export default function IDScanPage() {
                         className="w-full max-h-[300px] object-contain bg-white"
                       />
                       <div className="absolute top-3 right-3">
-                        <span className="px-3 py-1.5 rounded-full bg-kiosk-blue text-white text-xs font-semibold flex items-center gap-1.5">
+                        <span className="px-3 py-1.5 rounded-full bg-gradient-to-br from-kiosk-cyan to-kiosk-blue text-white text-xs font-semibold flex items-center gap-1.5">
                           <CheckCircle className="w-3.5 h-3.5" />
                           Ready to scan
                         </span>
@@ -214,11 +216,11 @@ export default function IDScanPage() {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-16 px-8">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-kiosk-blue/10 to-blue-100 flex items-center justify-center mb-6">
-                      <Camera className="w-10 h-10 text-kiosk-blue" />
+                    <div className="w-20 h-20 rounded-[24px] bg-gradient-to-br from-kiosk-cyan/10 to-kiosk-blue/10 flex items-center justify-center mb-6">
+                      <Camera className="w-10 h-10 text-kiosk-cyan" />
                     </div>
                     <p className="font-heading font-bold text-xl text-text-primary mb-2">
-                      Tap to Scan or Upload Your ID
+                      {t('scan.title')}
                     </p>
                     <p className="text-sm text-text-muted flex items-center gap-2">
                       <Upload className="w-4 h-4" />
@@ -232,7 +234,7 @@ export default function IDScanPage() {
               <div className="mt-8 space-y-3">
                 {selectedFile && (
                   <KioskButton
-                    label="Analyze ID Card"
+                    label={t('scan.button')}
                     icon={<Camera className="w-6 h-6" />}
                     onClick={handleAnalyze}
                     loading={loading}
@@ -242,7 +244,7 @@ export default function IDScanPage() {
                 )}
 
                 <KioskButton
-                  label="Skip — Enter Details Manually"
+                  label={t('scan.skip')}
                   onClick={() => navigate('/symptoms')}
                   variant="secondary"
                   disabled={loading}
@@ -252,6 +254,9 @@ export default function IDScanPage() {
           )}
         </AnimatePresence>
       </main>
+
+      {/* Footer */}
+      <KioskFooter />
     </div>
   );
 }

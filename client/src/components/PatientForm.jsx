@@ -16,9 +16,9 @@ export default function PatientForm({ initialValues = {}, onSubmit }) {
     dob: initialValues.dob || '',
     gender: initialValues.gender || 'unknown',
     uniqueId: initialValues.uniqueId || '',
-    insuranceProvider: initialValues.insurance?.provider || '',
-    insurancePolicyId: initialValues.insurance?.policyId || '',
-    insuranceStatus: initialValues.insurance?.status || 'unknown',
+    insuranceProvider: initialValues.insurance?.provider || initialValues.insuranceProvider || '',
+    insurancePolicyId: initialValues.insurance?.policyId || initialValues.insuranceNumber || '',
+    insuranceStatus: initialValues.insurance?.status || (initialValues.isInsuranceExpired ? 'inactive' : 'active') || 'unknown',
   });
 
   const handleChange = (field, value) => {

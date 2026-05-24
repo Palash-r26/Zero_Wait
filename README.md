@@ -28,7 +28,7 @@ The Zero-Wait OPD Kiosk replaces the traditional, slow, manual receptionist tria
 
 ## 🎨 Premium UI Experience
 The kiosk is designed not just to be functional, but to provide a premium, modern user experience that reduces patient anxiety:
-- **GSAP Animations:** Smooth, high-performance scroll and layout animations (like sliding chat bubbles and laser scanning lines).
+- **Framer Motion & GSAP Animations:** Smooth, high-performance scroll and layout animations (like sliding chat bubbles, priority badges, and the voice visualizer).
 - **React Bits & Uiverse.io:** Incorporates cutting-edge UI components including glowing cards, magnetic hover effects, and modern typing indicators to make the AI feel alive and responsive.
 
 ## 🏆 Hackathon Alignment
@@ -36,3 +36,10 @@ The kiosk is designed not just to be functional, but to provide a premium, moder
 - **Feasibility:** Built on a robust React + Node.js + MongoDB stack.
 - **Impact:** Solves a real-world problem by prioritizing critical patients instantly and cutting wait times.
 - **Google Tech:** Showcases the power of Gemini 1.5 Pro and Gemini Vision for healthcare applications.
+
+## 🚨 Insurance Alert Demo
+To demo the real-time agentic insurance alerts:
+1. Open a new tab and navigate to `http://localhost:5173/staff` (This connects the Socket.io client).
+2. In the patient kiosk tab, either scan an ID that returns an expired insurance, OR skip the scan and enter a manual patient.
+3. Complete the symptom chat and click "Confirm & Get Queue Ticket".
+4. The staff dashboard will instantly show an alert warning that the patient's insurance requires manual verification.

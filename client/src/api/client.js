@@ -22,12 +22,23 @@ export const extractPatientId = async (formData) => {
 };
 
 /**
+ * Save manual or corrected patient data to the database.
+ * @param {Object} patientData - JSON patient data
+ * @returns {Promise} API response with saved patient data
+ */
+export const createPatient = async (patientData) => {
+  const res = await api.post('/api/triage/patient', patientData);
+  return res.data;
+};
+
+/**
  * Send symptom conversation to Gemini for triage analysis.
  * @param {Array} messages - [{role: 'user'|'model', content: string}]
+ * @param {string} locale - 'en', 'hi', 'ta'
  * @returns {Promise} Triage result with department, priority, reasoning
  */
-export const analyzeSymptoms = async (messages) => {
-  const res = await api.post('/api/triage/analyze-symptoms', { messages });
+export const analyzeSymptoms = async (messages, locale = 'en') => {
+  const res = await api.post('/api/triage/analyze-symptoms', { messages, locale });
   return res.data;
 };
 
@@ -39,6 +50,15 @@ export const analyzeSymptoms = async (messages) => {
 export const allocateQueue = async (payload) => {
   const res = await api.post('/api/queue/allocate', payload);
   return res.data;
+};
+
+export const checkHealth = async () => {
+  try {
+    const res = await api.get('/api/health');
+    return res.data;
+  } catch (err) {
+    return { status: 'error', error: err.message };
+  }
 };
 
 export default api;

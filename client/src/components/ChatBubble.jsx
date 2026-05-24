@@ -21,8 +21,8 @@ export default function ChatBubble({ role, content }) {
       <div
         className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
           isUser
-            ? 'bg-kiosk-blue text-white'
-            : 'bg-gradient-to-br from-kiosk-green to-emerald-500 text-white'
+            ? 'bg-kiosk-blue-dark text-white'
+            : 'bg-gradient-to-br from-kiosk-cyan to-kiosk-blue text-white'
         }`}
       >
         {isUser ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
@@ -30,10 +30,10 @@ export default function ChatBubble({ role, content }) {
 
       {/* Bubble */}
       <div
-        className={`max-w-[75%] rounded-2xl px-5 py-4 text-base leading-relaxed ${
+        className={`max-w-[75%] rounded-[24px] px-5 py-4 text-base leading-relaxed ${
           isUser
-            ? 'bg-kiosk-blue text-white rounded-br-md'
-            : 'bg-white text-text-primary border border-border-light rounded-bl-md kiosk-shadow'
+            ? 'bg-kiosk-blue-dark text-white rounded-br-[8px]'
+            : 'bg-white text-text-primary border border-slate-200 rounded-bl-[8px] kiosk-shadow'
         }`}
       >
         {/* Render markdown-style bold text */}
@@ -65,10 +65,10 @@ export function TypingIndicator() {
       animate={{ opacity: 1, y: 0 }}
       className="flex gap-3"
     >
-      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-kiosk-green to-emerald-500 flex items-center justify-center flex-shrink-0">
+      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-kiosk-cyan to-kiosk-blue flex items-center justify-center flex-shrink-0">
         <Bot className="w-5 h-5 text-white" />
       </div>
-      <div className="bg-white border border-border-light rounded-2xl rounded-bl-md px-5 py-4 kiosk-shadow flex items-center gap-1.5">
+      <div className="bg-white border border-slate-200 rounded-[24px] rounded-bl-[8px] px-5 py-4 kiosk-shadow flex items-center gap-1.5">
         <span className="typing-dot w-2.5 h-2.5 rounded-full bg-text-muted" />
         <span className="typing-dot w-2.5 h-2.5 rounded-full bg-text-muted" />
         <span className="typing-dot w-2.5 h-2.5 rounded-full bg-text-muted" />
