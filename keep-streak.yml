@@ -2,7 +2,7 @@ name: Keep streak
 
 on:
   schedule:
-    - cron: "30 6 * * *"   # every day at 12:00 noon IST
+    - cron: "45 5 * * *"   # every day at 11:15 AM IST
   workflow_dispatch:        # lets you run it manually to test
 
 permissions:
