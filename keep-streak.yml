@@ -1,0 +1,40 @@
+name: Keep streak
+
+on:
+  schedule:
+    - cron: "30 6 * * *"   # every day at 12:00 noon IST
+  workflow_dispatch:        # lets you run it manually to test
+
+permissions:
+  contents: write
+
+jobs:
+  streak:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set commit author
+        run: |
+          git config user.name  "${{ github.actor }}"
+          git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+
+      - name: Change a file, then revert it
+        run: |
+          FILE=README.md
+          # 1) change: remove lines 2-3 (or append a line if the file is too short)
+          if [ "$(wc -l < $FILE)" -ge 5 ]; then
+            sed -i '2,3d' $FILE
+          else
+            echo "<!-- streak $(date -u +%F) -->" >> $FILE
+          fi
+          git add $FILE
+          git commit -m "chore: temporary tweak"
+
+          # 2) undo the change
+          git revert --no-edit HEAD
+
+      - name: Push
+        run: git push
