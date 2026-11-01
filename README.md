@@ -43,3 +43,7 @@ To demo the real-time agentic insurance alerts:
 2. In the patient kiosk tab, either scan an ID that returns an expired insurance, OR skip the scan and enter a manual patient.
 3. Complete the symptom chat and click "Confirm & Get Queue Ticket".
 4. The staff dashboard will instantly show an alert warning that the patient's insurance requires manual verification.
+
+## ⚙️ CI Activity Maintenance
+
+The repository includes a scheduled GitHub Actions workflow at [`keep-streak.yml`](./keep-streak.yml). It runs daily at **11:15 AM IST**, creates a traceable CI activity marker commit, and immediately reverts that marker so application documentation and source files remain unchanged. The workflow can also be started manually from the GitHub Actions tab.

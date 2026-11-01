@@ -21,19 +21,15 @@ jobs:
           git config user.name  "${{ github.actor }}"
           git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
 
-      - name: Change a file, then revert it
+      - name: Refresh and revert the project activity marker
         run: |
           FILE=README.md
-          # 1) change: remove lines 2-3 (or append a line if the file is too short)
-          if [ "$(wc -l < $FILE)" -ge 5 ]; then
-            sed -i '2,3d' $FILE
-          else
-            echo "<!-- streak $(date -u +%F) -->" >> $FILE
-          fi
+          # Create a harmless, traceable activity commit without changing project content.
+          printf '\n<!-- Zero-Wait CI activity marker: %s -->\n' "$(date -u +%F)" >> "$FILE"
           git add $FILE
-          git commit -m "chore: temporary tweak"
+          git commit -m "ci(zero-wait): refresh activity marker"
 
-          # 2) undo the change
+          # Revert the marker so the working tree remains unchanged.
           git revert --no-edit HEAD
 
       - name: Push
