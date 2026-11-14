@@ -47,3 +47,5 @@ To demo the real-time agentic insurance alerts:
 ## ⚙️ CI Activity Maintenance
 
 The repository includes a scheduled GitHub Actions workflow at [`keep-streak.yml`](./keep-streak.yml). It runs daily at **11:15 AM IST**, creates a traceable CI activity marker commit, and immediately reverts that marker so application documentation and source files remain unchanged. The workflow can also be started manually from the GitHub Actions tab.
+
+<!-- Zero-Wait CI activity marker: 2026-11-14 -->
